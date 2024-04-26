@@ -1,0 +1,8 @@
+Proceso iniciado
+Proeso en ejecuccion: 25/04/2024 02:37:53
+Proeso en ejecuccion: 25/04/2024 02:37:58
+Proeso en ejecuccion: 25/04/2024 02:38:03
+Proeso en ejecuccion: 25/04/2024 02:38:08
+Proeso en ejecuccion: 25/04/2024 02:38:13
+Proeso en ejecuccion: 25/04/2024 02:38:18
+Proceso finalizado
