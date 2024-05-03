@@ -7,11 +7,12 @@ using Microsoft.EntityFrameworkCore;
 using WebApiAutores.DTOs;
 using WebApiAutores.Entidades;
 using WebApiAutores.Migrations;
+using WebApiAutores.Utilidades;
 
-namespace WebApiAutores.Controllers
+namespace WebApiAutores.Controllers.V1
 {
     [ApiController]
-    [Route("api/libros/{libroId:int}/comentarios")]
+    [Route("api/v1/libros/{libroId:int}/comentarios")]
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 
     public class ComentariosController : ControllerBase
@@ -20,7 +21,7 @@ namespace WebApiAutores.Controllers
         private readonly IMapper mapper;
         private readonly UserManager<IdentityUser> userManager;
 
-        public ComentariosController(ApplicationDbContex context, 
+        public ComentariosController(ApplicationDbContex context,
             IMapper mapper,
             UserManager<IdentityUser> userManager)
         {
@@ -29,18 +30,20 @@ namespace WebApiAutores.Controllers
             this.userManager = userManager;
         }
 
-        [HttpGet]
-        public async Task<ActionResult<List<ComentarioDTO>>> Get(int libroId) 
+        [HttpGet(Name = "obtenerComentariosLibro")]
+        public async Task<ActionResult<List<ComentarioDTO>>> Get(int libroId, [FromQuery] PaginacionDTO paginacionDTO)
         {
-            
+
             var existeLibro = await context.Libros.AnyAsync(x => x.Id == libroId);
             if (!existeLibro)
             {
                 return NotFound();
             }
+            var queryable = context.Comentarios.Where(x => x.LibroId == libroId).AsQueryable();
+            await HttpContext.InsertarParametrosPaginacionEnCabecera(queryable);
+            var comentarios = await queryable.OrderBy(comentario => comentario.Id)
+                .Paginar(paginacionDTO).ToListAsync();
 
-            var comentarios = await context.Comentarios
-                    .Where(x => x.LibroId == libroId).ToListAsync();
 
             return mapper.Map<List<ComentarioDTO>>(comentarios);
 
@@ -51,23 +54,23 @@ namespace WebApiAutores.Controllers
         {
             var comentario = await context.Comentarios.FirstOrDefaultAsync(x => x.Id == id);
 
-            if(comentario == null)
+            if (comentario == null)
             {
                 return NotFound();
             }
             return mapper.Map<ComentarioDTO>(comentario);
         }
 
-        [HttpPost]
+        [HttpPost(Name = "crearComentario")]
         [AllowAnonymous]
-        public  async Task<ActionResult> Post(int libroId, ComentarioCreacionDTO comentarioCreacionDTO)
+        public async Task<ActionResult> Post(int libroId, ComentarioCreacionDTO comentarioCreacionDTO)
         {
             var emailClaim = HttpContext.User.Claims.Where(claim => claim.Type == "email").FirstOrDefault();
             var email = emailClaim.Value;
             var usuario = await userManager.FindByEmailAsync(email);
             var usuarioId = usuario.Id;
             var existeLibro = await context.Libros.AnyAsync(x => x.Id == libroId);
-            if (!existeLibro) 
+            if (!existeLibro)
             {
                 return NotFound();
             }
@@ -79,11 +82,11 @@ namespace WebApiAutores.Controllers
             await context.SaveChangesAsync();
 
             var comentarioDTO = mapper.Map<ComentarioDTO>(comentario);
-            return CreatedAtRoute("obtenerComentario", new {id = comentario.Id, libroId = libroId}, comentarioDTO);
-            
+            return CreatedAtRoute("obtenerComentario", new { id = comentario.Id, libroId }, comentarioDTO);
+
         }
 
-        [HttpPut("{id:int}")]
+        [HttpPut("{id:int}", Name = "actualizarComentario")]
         public async Task<ActionResult> Put(int libroId, int id, ComentarioCreacionDTO comentarioCreacionDTO)
         {
             var existe = await context.Autores.AnyAsync(x => x.Id == id);
@@ -95,9 +98,9 @@ namespace WebApiAutores.Controllers
 
             var existeComentario = await context.Comentarios.AnyAsync(x => x.Id == id);
 
-            if(!existeComentario)
+            if (!existeComentario)
             {
-                return NotFound();  
+                return NotFound();
             }
 
             var comentario = mapper.Map<Comentario>(comentarioCreacionDTO);

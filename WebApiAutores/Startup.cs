@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
@@ -9,6 +10,8 @@ using System.Text;
 using System.Text.Json.Serialization;
 using WebApiAutores.Filtros;
 using WebApiAutores.Middlewares;
+using WebApiAutores.Servicios;
+using WebApiAutores.Utilidades;
 
 namespace WebApiAutores
 {
@@ -27,7 +30,8 @@ namespace WebApiAutores
 
             services.AddControllers(opciones => 
             { 
-                opciones.Filters.Add(typeof(FiltroDeExcepcion)); 
+                opciones.Filters.Add(typeof(FiltroDeExcepcion));
+                opciones.Conventions.Add(new SwaggerAgrupaPorVersion());
             }).AddJsonOptions(x => 
                 x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles).AddNewtonsoftJson();
 
@@ -50,6 +54,9 @@ namespace WebApiAutores
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "WebAPIAutores", Version = "v1" });
+                c.SwaggerDoc("v2", new OpenApiInfo { Title = "WebAPIAutores", Version = "v2" });
+                c.OperationFilter<AgregarParametroHATEOAS>();
+                c.OperationFilter<AgregarParametroXVersion>();
 
                 c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
@@ -95,10 +102,17 @@ namespace WebApiAutores
             {
                 opciones.AddDefaultPolicy(builder =>
                 {
-                    builder.WithOrigins("https://apirequest.io").AllowAnyMethod().AllowAnyHeader();
+                    builder.WithOrigins("https://apirequest.io").AllowAnyMethod().AllowAnyHeader()
+                    .WithExposedHeaders(new string[] {"cantidadTotalRegistros"});
+
                 });
             });
 
+            services.AddTransient<GenerarEnlacesService>();
+            services.AddTransient<HATEOASAutorFilterAttribute>();
+            services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
+
+            services.AddTransient<HashService>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILogger<Startup> logger)
@@ -107,9 +121,14 @@ namespace WebApiAutores
 
             if (env.IsDevelopment())
             {
-                app.UseSwagger();
-                app.UseSwaggerUI();
+                app.UseDeveloperExceptionPage();
             }
+            app.UseSwagger();
+            app.UseSwaggerUI(c => {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "WebAPIAutores v1");
+                c.SwaggerEndpoint("/swagger/v2/swagger.json", "WebAPIAutores v2");
+
+            });
 
             app.UseHttpsRedirection();
             

@@ -7,10 +7,10 @@ using Microsoft.EntityFrameworkCore;
 using WebApiAutores.DTOs;
 using WebApiAutores.Entidades;
 
-namespace WebApiAutores.Controllers
+namespace WebApiAutores.Controllers.V1
 {
     [ApiController]
-    [Route("api/libros")]
+    [Route("api/v1/libros")]
     public class LibrosController : ControllerBase
     {
         private readonly ApplicationDbContex context;
@@ -26,7 +26,7 @@ namespace WebApiAutores.Controllers
         [HttpGet("{id:int}", Name = "obtenerLibro")]
         public async Task<ActionResult<LibroDTOConAutores>> Get(int id)
         {
-            var  libro = await context.Libros.
+            var libro = await context.Libros.
                     Include(x => x.AutoresLibros)
                     .ThenInclude(x => x.Autor)
                     .FirstOrDefaultAsync(x => x.Id == id);
@@ -35,18 +35,18 @@ namespace WebApiAutores.Controllers
             return mapper.Map<LibroDTOConAutores>(libro);
         }
 
-        [HttpPost]
+        [HttpPost(Name = "crearLibro")]
         public async Task<ActionResult> Post(LibroCreacionDTO libroCreacionDTO)
         {
 
-            if(libroCreacionDTO == null) { return BadRequest("No se puede crear un libro sin autores"); }
+            if (libroCreacionDTO == null) { return BadRequest("No se puede crear un libro sin autores"); }
 
 
 
             var autoresIds = await context.Autores
                 .Where(autorBD => libroCreacionDTO.AutoresIds.Contains(autorBD.Id)).Select(x => x.Id).ToListAsync();
 
-            if(libroCreacionDTO.AutoresIds.Count != autoresIds.Count) 
+            if (libroCreacionDTO.AutoresIds.Count != autoresIds.Count)
             {
                 return BadRequest("No existe uno de los autores enviados");
             }
@@ -58,10 +58,10 @@ namespace WebApiAutores.Controllers
             await context.SaveChangesAsync();
 
             var libroDTO = mapper.Map<LibroDTO>(libro);
-            return CreatedAtRoute("obtenerLibro", new {id = libro.Id}, libroDTO);
+            return CreatedAtRoute("obtenerLibro", new { id = libro.Id }, libroDTO);
         }
 
-        [HttpPut("{id:int}")]
+        [HttpPut("{id:int}", Name = "actualizarLibro")]
         public async Task<ActionResult> Put(int id, LibroCreacionDTO libroCreacionDTO)
         {
 
@@ -81,7 +81,7 @@ namespace WebApiAutores.Controllers
             return NoContent();
         }
 
-        [HttpPatch("{id:int}")]
+        [HttpPatch("{id:int}", Name = "patchLibro")]
         public async Task<ActionResult> Patch(int id, JsonPatchDocument<LibroPatchDTO> patchDocument)
         {
             if (patchDocument == null)
@@ -106,7 +106,7 @@ namespace WebApiAutores.Controllers
             return NoContent();
         }
 
-    
+
 
 
         private void AsignarOrdenAutores(Libro libro)
