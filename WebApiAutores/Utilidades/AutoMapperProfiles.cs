@@ -22,6 +22,7 @@ namespace WebApiAutores.Utilidades
             CreateMap<LibroPatchDTO, Libro>().ReverseMap();
             CreateMap<ComentarioCreacionDTO,Comentario>();
             CreateMap<Comentario, ComentarioDTO>();
+            CreateMap<ComentariosDTO, Comentario>();
 
         }
 

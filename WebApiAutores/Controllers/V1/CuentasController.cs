@@ -149,7 +149,7 @@ namespace WebApiAutores.Controllers.V1
             var claims = new List<Claim>()
             {
                 new Claim("email", credencialesUsuario.Email),
-                new Claim("lo que yo quiera", "cualquier otro valor")
+                new Claim("Otro claim", "este es el valor de otro claim")
             };
 
             var usuario = await userManager.FindByEmailAsync(credencialesUsuario.Email);
